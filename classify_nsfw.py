@@ -14,7 +14,7 @@ import time
 from PIL import Image
 from StringIO import StringIO
 import caffe
-from get_file import get_image
+from util import get_image
 from bottle import route, request, response, template, run
 import json
 import time
