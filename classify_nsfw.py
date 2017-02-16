@@ -14,6 +14,21 @@ import time
 from PIL import Image
 from StringIO import StringIO
 import caffe
+from get_file import get_image
+from bottle import route, request, response, template, run
+import json
+import time
+
+# Pre-load caffe model.
+nsfw_net = caffe.Net('nsfw_model/deploy.prototxt', 'nsfw_model/resnet_50_1by2_nsfw.caffemodel', caffe.TEST)
+
+# Load transformer
+# Note that the parameters are hard-coded for best results
+caffe_transformer = caffe.io.Transformer({'data': nsfw_net.blobs['data'].data.shape})
+caffe_transformer.set_transpose('data', (2, 0, 1))  # move image channels to outermost
+caffe_transformer.set_mean('data', np.array([104, 117, 123]))  # subtract the dataset-mean value in each channel
+caffe_transformer.set_raw_scale('data', 255)  # rescale from [0, 1] to [0, 255]
+caffe_transformer.set_channel_swap('data', (2, 1, 0))  # swap channels from RGB to BGR
 
 
 def resize_image(data, sz=(256, 256)):
@@ -79,50 +94,28 @@ def caffe_preprocess_and_compute(pimg, caffe_transformer=None, caffe_net=None,
     else:
         return []
 
-
-def main(argv):
-    pycaffe_dir = os.path.dirname(__file__)
-
-    parser = argparse.ArgumentParser()
-    # Required arguments: input file.
-    parser.add_argument(
-        "input_file",
-        help="Path to the input image file"
-    )
-
-    # Optional arguments.
-    parser.add_argument(
-        "--model_def",
-        help="Model definition file."
-    )
-    parser.add_argument(
-        "--pretrained_model",
-        help="Trained model weights file."
-    )
-
-    args = parser.parse_args()
-    image_data = open(args.input_file).read()
-
-    # Pre-load caffe model.
-    nsfw_net = caffe.Net(args.model_def,  # pylint: disable=invalid-name
-        args.pretrained_model, caffe.TEST)
-
-    # Load transformer
-    # Note that the parameters are hard-coded for best results
-    caffe_transformer = caffe.io.Transformer({'data': nsfw_net.blobs['data'].data.shape})
-    caffe_transformer.set_transpose('data', (2, 0, 1))  # move image channels to outermost
-    caffe_transformer.set_mean('data', np.array([104, 117, 123]))  # subtract the dataset-mean value in each channel
-    caffe_transformer.set_raw_scale('data', 255)  # rescale from [0, 1] to [0, 255]
-    caffe_transformer.set_channel_swap('data', (2, 1, 0))  # swap channels from RGB to BGR
-
+@route('/porn_image')
+def porn_image():
+    url = request.query.url
+    begin = time.time()
+    image_data = open(get_image(url)).read()
+    after_download_image = time.time()
     # Classify.
     scores = caffe_preprocess_and_compute(image_data, caffe_transformer=caffe_transformer, caffe_net=nsfw_net, output_layers=['prob'])
-
+    after_mode = time.time()
     # Scores is the array containing SFW / NSFW image probabilities
     # scores[1] indicates the NSFW probability
-    print "NSFW score:  " , scores[1]
+    return json.dumps({
+            'sfw_score': scores[0], 
+            'nsfw_score':scores[1], 
+            'ats_download_image':after_download_image-begin, 
+            'ats_model':after_mode-after_download_image}
+        ) + '\n'
 
-
+@route('/hello')
+def hello():
+    return "Hello World!\n"
 
 if __name__ == '__main__':
-    main(sys.argv)
+    pycaffe_dir = os.path.dirname(__file__)
+    run(host='localhost', port=8080, debug=True)
