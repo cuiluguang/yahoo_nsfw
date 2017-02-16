@@ -99,8 +99,11 @@ def caffe_preprocess_and_compute(pimg, caffe_transformer=None, caffe_net=None,
 def porn_image():
     url = request.query.url
     begin = time.time()
+    filename = get_image(url)
+    if filename == '00000.jpg':
+        return 'Image is too large!'
     try:
-        image_data = open(get_image(url)).read()
+        image_data = open(filename).read()
     except (HTTPError, URLError):
         return "Image can not be found!"
 
@@ -109,7 +112,7 @@ def porn_image():
     try:
         scores = caffe_preprocess_and_compute(image_data, caffe_transformer=caffe_transformer, caffe_net=nsfw_net, output_layers=['prob'])
     except IOError:
-        return "The URL is not a image file"
+        return "The URL is not a image file!"
 
     after_mode = time.time()
     # Scores is the array containing SFW / NSFW image probabilities

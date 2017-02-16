@@ -1,1 +1,4 @@
-mage_test1.jpg
+image_test1.jpg
+
+*.pyc
+
