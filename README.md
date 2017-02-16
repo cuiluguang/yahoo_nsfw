@@ -15,6 +15,6 @@ Run the docker image with a volume mapped to your `open_nsfw` repository. Your `
 ```
 git clone https://github.com/yahoo/open_nsfw.git
 cd open_nsfw
-docker run --volume=$(pwd):/workspace --volume=/data/tmp/image:/data/tmp/image caffe:cpu python ./classify_nsfw.py
+docker run -p 8080:8080 --volume=$(pwd):/workspace --volume=/data/tmp/image:/data/tmp/image caffe:cpu python ./classify_nsfw.py
 ```
 
