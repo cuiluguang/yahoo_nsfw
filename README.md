@@ -1,3 +1,5 @@
+###This is a RESTful API for Yahoo! NSFW image detection.
+=================
 # Open nsfw model
 This repo contains code for running Not Suitable for Work (NSFW) classification deep neural network Caffe models. Please refer our [blog](https://yahooeng.tumblr.com/post/151148689421/open-sourcing-a-deep-learning-solution-for) post which describes this work and experiments in more detail.
 
