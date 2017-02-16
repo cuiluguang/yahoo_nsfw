@@ -18,6 +18,7 @@ from get_file import get_image
 from bottle import route, request, response, template, run
 import json
 import time
+from urllib2 import HTTPError, URLError
 
 # Pre-load caffe model.
 nsfw_net = caffe.Net('nsfw_model/deploy.prototxt', 'nsfw_model/resnet_50_1by2_nsfw.caffemodel', caffe.TEST)
@@ -98,19 +99,27 @@ def caffe_preprocess_and_compute(pimg, caffe_transformer=None, caffe_net=None,
 def porn_image():
     url = request.query.url
     begin = time.time()
-    image_data = open(get_image(url)).read()
+    try:
+        image_data = open(get_image(url)).read()
+    except (HTTPError, URLError):
+        return "Image can not be found!"
+
     after_download_image = time.time()
     # Classify.
-    scores = caffe_preprocess_and_compute(image_data, caffe_transformer=caffe_transformer, caffe_net=nsfw_net, output_layers=['prob'])
+    try:
+        scores = caffe_preprocess_and_compute(image_data, caffe_transformer=caffe_transformer, caffe_net=nsfw_net, output_layers=['prob'])
+    except IOError:
+        return "The URL is not a image file"
+
     after_mode = time.time()
     # Scores is the array containing SFW / NSFW image probabilities
     # scores[1] indicates the NSFW probability
     return json.dumps({
             'sfw_score': scores[0], 
             'nsfw_score':scores[1], 
-            'ats_download_image':after_download_image-begin, 
-            'ats_model':after_mode-after_download_image}
-        ) + '\n'
+            'ats_getImage_millis':int((after_download_image-begin)*1000), 
+            'ats_model_millis':int((after_mode-after_download_image)*1000)}
+        )
 
 @route('/hello')
 def hello():
