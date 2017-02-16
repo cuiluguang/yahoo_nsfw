@@ -18,3 +18,8 @@ cd open_nsfw
 docker run -p 8080:8080 --volume=$(pwd):/workspace --volume=/data/tmp/image:/data/tmp/image caffe:cpu python ./classify_nsfw.py
 ```
 
+Then you can check whether an image is pornographic via 
+```
+http://localhost:8080/porn_image?url=YOUR_IMAGE_URL
+```
+
