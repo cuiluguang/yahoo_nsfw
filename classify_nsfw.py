@@ -97,6 +97,7 @@ def caffe_preprocess_and_compute(pimg, caffe_transformer=None, caffe_net=None,
 
 @route('/porn_image')
 def porn_image():
+    mode = request.query.mode
     url = request.query.url
     begin = time.time()
     filename = get_image(url)
@@ -117,16 +118,39 @@ def porn_image():
     after_mode = time.time()
     # Scores is the array containing SFW / NSFW image probabilities
     # scores[1] indicates the NSFW probability
-    return json.dumps({
-            'sfw_score': scores[0], 
-            'nsfw_score':scores[1], 
-            'ats_getImage_millis':int((after_download_image-begin)*1000), 
-            'ats_model_millis':int((after_mode-after_download_image)*1000)}
-        )
+    if mode == 'simple':
+        return json.dumps({
+                'sfw_score': scores[0], 
+                'nsfw_score':scores[1], 
+                'ats_image_download':int((after_download_image-begin)*1000), 
+                'ats_model_predict':int((after_mode-after_download_image)*1000)}
+            )
+    else:
+        return render(url, scores, (after_download_image-begin)*1000, (after_mode-after_download_image)*1000)
 
 @route('/hello')
 def hello():
     return "Hello World!\n"
+
+def render(url, scores, ats_image_download, ats_model_predict):
+    return template(
+        '''
+            <div>
+                <img src="{{url}}" style="width:500px">
+            </div>
+            <ul> 
+                <li>sfw_score: {{sfw_score}}</li>
+                <li>nsfw_score: {{nsfw_score}}</li>
+                <li>ats_image_download: {{ats_image_download}}</li>
+                <li>ats_model_predict: {{ats_model_predict}}</li>
+            </ul>
+        ''', 
+        url = url, 
+        sfw_score="%.6f" % scores[0], 
+        nsfw_score="%.6f" % scores[1], 
+        ats_image_download="%.6f" % ats_image_download, 
+        ats_model_predict="%.6f" % ats_model_predict
+        )
 
 if __name__ == '__main__':
     pycaffe_dir = os.path.dirname(__file__)
