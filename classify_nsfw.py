@@ -141,8 +141,8 @@ def render(url, scores, ats_image_download, ats_model_predict):
             <ul> 
                 <li>sfw_score: {{sfw_score}}</li>
                 <li>nsfw_score: {{nsfw_score}}</li>
-                <li>ats_image_download: {{ats_image_download}}</li>
-                <li>ats_model_predict: {{ats_model_predict}}</li>
+                <li>ats_image_download: {{ats_image_download}} ms</li>
+                <li>ats_model_predict: {{ats_model_predict}} ms</li>
             </ul>
         ''', 
         url = url, 
